@@ -1,1 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Guess the Number - Manga Edition</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
 
+        /* Падающие розовые лепестки сакуры */
+        .sakura {
+            position: fixed;
+            top: -10px;
+            background-color: #ff69b4;
+            border-radius: 150% 0 150% 0;
+            animation: fall linear infinite;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) translateX(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(105vh) translateX(50px) rotate(360deg);
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 600px;
+            background: #111111;
+            border: 2px solid #ffffff;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            border-bottom: 1px dashed #ffffff;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .characters {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .characters img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border: 2px solid #ffffff;
+            filter: grayscale(100%);
+            transition: 0.3s;
+        }
+
+        .characters img:hover {
+            filter: grayscale(0%);
+            border-color: #ff69b4;
+        }
+
+        input, select, button {
+            background: #000;
+            color: #fff;
+            border: 1px solid #fff;
+            padding: 10px;
+            font-family: inherit;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #log {
+            background: #0a0a0a;
+            border: 1px dashed #555;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #fff;
+            padding: 6px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background: #222;
+        }
+
+        .calc-section {
+            border-top: 2px solid #fff;
+            margin-top: 20px;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Падающие лепестки сакуры (генерируются через JS) -->
+
+    <div class="container">
+        <h1>Manga Number Guess</h1>
+        
+        <div class="characters">
+            <div style="text-align: center;">
+                <img src="rize #pfp #rize #tokyoghoul #anime #manga.jpg" alt="Rize" onerror="this.src='https://via.placeholder.com/120?text=Rize'">
+                <div style="font-size: 12px; margin-top: 5px;">Rize</div>
+            </div>
+            <div style="text-align: center;">
+                <img src="Mikasa Ackerman icon.jpg" alt="Mikasa" onerror="this.src='https://via.placeholder.com/120?text=Mikasa'">
+                <div style="font-size: 12px; margin-top: 5px;">Mikasa</div>
+            </div>
+        </div>
+
+        <!-- Шаг 1: Ввод никнейма -->
+        <div id="name-box">
+            <p>What is your Steam nickname?</p>
+            <input type="text" id="nickname-input" placeholder="Enter nickname...">
+            <button onclick="setNickname()">Start Journey</button>
+        </div>
+
+        <!-- Шаг 2: Игра -->
+        <div id="game-box" class="hidden">
+            <p id="welcome-msg"></p>
+            <label>Choose Level:</label>
+            <select id="level-select">
+                <option value="0">Level 1 (1 - 10, 5 attempts)</option>
+                <option value="1">Level 2 (1 - 20, 5 attempts)</option>
+                <option value="2">Level 3 (1 - 50, 5 attempts)</option>
+                <option value="3">Level 4 (1 - 100, 10 attempts)</option>
+                <option value="4">Level 5 (1 - 200, 20 attempts)</option>
+                <option value="5">Level 6 (1 - 500, 50 attempts)</option>
+                <option value="6">Level 7 (1 - 1000, 100 attempts)</option>
+            </select>
+            <button onclick="startGame()">Start Game</button>
+
+            <div id="play-area" class="hidden">
+                <p id="prompt-text"></p>
+                <input type="number" id="guess-input" placeholder="Enter your guess...">
+                <button onclick="makeGuess()">Submit Guess</button>
+            </div>
+
+            <div id="log"></div>
+        </div>
+
+        <!-- Таблица лидеров -->
+        <div id="leaderboard-box" class="container" style="box-shadow: none; margin-top: 15px; margin-bottom: 0;">
+            <h2>Leaderboard</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Lvl</th>
+                        <th>Attempts</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- Записи добавляются сюда -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Твой мини-калькулятор (бонус из твоего кода) -->
+        <div class="calc-section">
+            <h2>Mini Calculator</h2>
+            <input type="number" id="calc-num1" placeholder="First digit">
+            <input type="text" id="calc-op" placeholder="Operator (+, -, *, /)">
+            <input type="number" id="calc-num2" placeholder="Second digit">
+            <button onclick="runCalculator()">Calculate</button>
+            <div id="calc-result" style="margin-top: 5px; font-weight: bold;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Генерация падающей розовой сакуры
+        for (let i = 0; i < 30; i++) {
+            let sakura = document.createElement('div');
+            sakura.className = 'sakura';
+            sakura.style.left = Math.random() * 100 + 'vw';
+            sakura.style.top = -Math.random() * 20 - 10 + 'vh';
+            sakura.style.width = Math.random() * 10 + 8 + 'px';
+            sakura.style.height = sakura.style.width;
+            sakura.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            sakura.style.animationDelay = (Math.random() * 5) + 's';
+            document.body.appendChild(sakura);
+        }
+
+        let playerName = "";
+        let bestScore = null;
+        let leaderboard = [];
+
+        const levels = [10, 20, 50, 100, 200, 500, 1000];
+        const maxAttemptsList = [5, 5, 5, 10, 20, 50, 100];
+
+        let currentLevel = 0;
+        let maxNum = 10;
+        let maxAttempts = 5;
+        let secretNumber = 0;
+        let attempts = 1;
+
+        function setNickname() {
+            let input = document.getElementById('nickname-input').value.trim();
+            if(!input) return alert("Enter nickname!");
+            playerName = input;
+            document.getElementById('welcome-msg').innerText = `Hello, very nice nickname: ${playerName}!`;
+            document.getElementById('name-box').classList.add('hidden');
+            document.getElementById('game-box').classList.remove('hidden');
+        }
+
+        function startGame() {
+            currentLevel = parseInt(document.getElementById('level-select').value);
+            maxNum = levels[currentLevel];
+            maxAttempts = maxAttemptsList[currentLevel];
+            secretNumber = Math.floor(Math.random() * maxNum) + 1;
+            attempts = 1;
+
+            document.getElementById('play-area').classList.remove('hidden');
+            document.getElementById('prompt-text').innerText = `Guess the number from 1 to ${maxNum} (Attempts left: ${maxAttempts - attempts + 1}):`;
+            document.getElementById('log').innerHTML = `Game started on level ${currentLevel + 1}. Good luck!<br>`;
+            document.getElementById('guess-input').value = '';
+        }
+
+        function makeGuess() {
+            let guessVal = parseInt(document.getElementById('guess-input').value);
+            let log = document.getElementById('log');
+
+            if(isNaN(guessVal)) return;
+
+            if (guessVal === secretNumber) {
+                log.innerHTML += `Lucky man! You guessed it in ${attempts} attempts!<br>`;
+                if (bestScore === null || attempts < bestScore) {
+                    bestScore = attempts;
+                    log.innerHTML += `New record!<br>`;
+                } else {
+                    log.innerHTML += `Best score for now: ${bestScore} attempts.<br>`;
+                }
+                leaderboard.push({name: playerName, level: currentLevel + 1, attempts: attempts, status: "Won"});
+                updateLeaderboard();
+                document.getElementById('play-area').classList.add('hidden');
+            } else {
+                if (guessVal < secretNumber) {
+                    log.innerHTML += `Too low! Try higher.<br>`;
+                } else {
+                    log.innerHTML += `Too high! Try lower. Wrong number!<br>`;
+                }
+                attempts++;
+                if (attempts > maxAttempts) {
+                    log.innerHTML += `GAME OVER! YOU RAN OUT OF ATTEMPTS. The number was ${secretNumber}.<br>`;
+                    leaderboard.push({name: playerName, level: currentLevel + 1, attempts: attempts - 1, status: "Lost"});
+                    updateLeaderboard();
+                    document.getElementById('play-area').classList.add('hidden');
+                } else {
+                    document.getElementById('prompt-text').innerText = `Guess the number from 1 to ${maxNum} (Attempts left: ${maxAttempts - attempts + 1}):`;
+                }
+            }
+            document.getElementById('guess-input').value = '';
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateLeaderboard() {
+            let tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = "";
+            leaderboard.forEach(entry => {
+                let row = `<tr>
+                    <td>${entry.name}</td>
+                    <td>${entry.level}</td>
+                    <td>${entry.attempts}</td>
+                    <td>${entry.status}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Твой калькулятор
+        function runCalculator() {
+            let num1 = parseFloat(document.getElementById('calc-num1').value);
+            let op = document.getElementById('calc-op').value.trim();
+            let num2 = parseFloat(document.getElementById('calc-num2').value);
+            let resBox = document.getElementById('calc-result');
+
+            if (isNaN(num1) || isNaN(num2)) {
+                resBox.innerText = "Error: invalid numbers!";
+                return;
+            }
+
+            let result;
+            if (op === "+") {
+                result = num1 + num2;
+                resBox.innerText = "Result: " + result;
+            } else if (op === "-") {
+                result = num1 - num2;
+                resBox.innerText = "Result: " + result;
+            } else if (op === "*") {
+                result = num1 * num2;
+                resBox.innerText = "Result: " + result;
+            } else if (op === "/") {
+                if(num2 === 0) { resBox.innerText = "Error: Division by zero!"; return; }
+                result = num1 / num2;
+                resBox.innerText = "Result: " + result;
+            } else {
+                resBox.innerText = "Error: false operator!";
+            }
+        }
+    </script>
+</body>
+</html>
