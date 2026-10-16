@@ -21,7 +21,6 @@
             position: relative;
         }
 
-        /* Падающие розовые лепестки сакуры */
         .sakura {
             position: fixed;
             top: -10px;
@@ -34,12 +33,8 @@
         }
 
         @keyframes fall {
-            0% {
-                transform: translateY(-10px) translateX(0) rotate(0deg);
-            }
-            100% {
-                transform: translateY(105vh) translateX(50px) rotate(360deg);
-            }
+            0% { transform: translateY(-10px) translateX(0) rotate(0deg); }
+            100% { transform: translateY(105vh) translateX(50px) rotate(360deg); }
         }
 
         .container {
@@ -145,14 +140,13 @@
 </head>
 <body>
 
-    <!-- Падающие лепестки сакуры (генерируются через JS) -->
-
     <div class="container">
         <h1>Manga Number Guess</h1>
         
         <div class="characters">
             <div style="text-align: center;">
-                <img src="rize #pfp #rize #tokyoghoul #anime #manga.jpg" alt="Rize" onerror="this.src='https://via.placeholder.com/120?text=Rize'">
+                <!-- Изменили имя на rize.jpg (переименуй файл в репозитории) -->
+                <img src="rize.jpg" alt="Rize" onerror="this.src='https://via.placeholder.com/120?text=Rize'">
                 <div style="font-size: 12px; margin-top: 5px;">Rize</div>
             </div>
             <div style="text-align: center;">
@@ -161,27 +155,29 @@
             </div>
         </div>
 
-        <!-- Шаг 1: Ввод никнейма -->
+        <!-- Шаг 1: Никнейм -->
         <div id="name-box">
-            <p>What is your Steam nickname?</p>
+            <p>What is your steam nickname?</p>
             <input type="text" id="nickname-input" placeholder="Enter nickname...">
             <button onclick="setNickname()">Start Journey</button>
         </div>
 
-        <!-- Шаг 2: Игра -->
+        <!-- Шаг 2: Выбор уровня и игра -->
         <div id="game-box" class="hidden">
             <p id="welcome-msg"></p>
-            <label>Choose Level:</label>
-            <select id="level-select">
-                <option value="0">Level 1 (1 - 10, 5 attempts)</option>
-                <option value="1">Level 2 (1 - 20, 5 attempts)</option>
-                <option value="2">Level 3 (1 - 50, 5 attempts)</option>
-                <option value="3">Level 4 (1 - 100, 10 attempts)</option>
-                <option value="4">Level 5 (1 - 200, 20 attempts)</option>
-                <option value="5">Level 6 (1 - 500, 50 attempts)</option>
-                <option value="6">Level 7 (1 - 1000, 100 attempts)</option>
-            </select>
-            <button onclick="startGame()">Start Game</button>
+            <div id="level-selection-area">
+                <label>Choose Level:</label>
+                <select id="level-select">
+                    <option value="0">Level 1 (1 - 10, 5 attempts)</option>
+                    <option value="1">Level 2 (1 - 20, 5 attempts)</option>
+                    <option value="2">Level 3 (1 - 50, 5 attempts)</option>
+                    <option value="3">Level 4 (1 - 100, 10 attempts)</option>
+                    <option value="4">Level 5 (1 - 200, 20 attempts)</option>
+                    <option value="5">Level 6 (1 - 500, 50 attempts)</option>
+                    <option value="6">Level 7 (1 - 1000, 100 attempts)</option>
+                </select>
+                <button onclick="startGame()">Start Game</button>
+            </div>
 
             <div id="play-area" class="hidden">
                 <p id="prompt-text"></p>
@@ -189,10 +185,17 @@
                 <button onclick="makeGuess()">Submit Guess</button>
             </div>
 
+            <!-- Блок повторной игры (y/n) -->
+            <div id="restart-area" class="hidden" style="text-align: center; margin-top: 15px; border-top: 1px dashed #fff; padding-top: 10px;">
+                <p>You wanna play one more time? (y/n)</p>
+                <button onclick="restartGame(true)" style="width: 48%; display: inline-block;">Yes (y)</button>
+                <button onclick="restartGame(false)" style="width: 48%; display: inline-block;">No (n)</button>
+            </div>
+
             <div id="log"></div>
         </div>
 
-        <!-- Таблица лидеров -->
+        <!-- Лидерборд -->
         <div id="leaderboard-box" class="container" style="box-shadow: none; margin-top: 15px; margin-bottom: 0;">
             <h2>Leaderboard</h2>
             <table>
@@ -205,12 +208,13 @@
                     </tr>
                 </thead>
                 <tbody id="leaderboard-body">
-                    <!-- Записи добавляются сюда -->
+                    <!-- Данные подгружаются из localStorage -->
                 </tbody>
             </table>
+            <button onclick="clearLeaderboard()" style="margin-top: 10px; font-size: 12px; padding: 5px;">Clear Leaderboard</button>
         </div>
 
-        <!-- Твой мини-калькулятор (бонус из твоего кода) -->
+        <!-- Калькулятор -->
         <div class="calc-section">
             <h2>Mini Calculator</h2>
             <input type="number" id="calc-num1" placeholder="First digit">
@@ -222,7 +226,7 @@
     </div>
 
     <script>
-        // Генерация падающей розовой сакуры
+        // Сакура
         for (let i = 0; i < 30; i++) {
             let sakura = document.createElement('div');
             sakura.className = 'sakura';
@@ -237,7 +241,7 @@
 
         let playerName = "";
         let bestScore = null;
-        let leaderboard = [];
+        let leaderboard = JSON.parse(localStorage.getItem('manga_leaderboard')) || [];
 
         const levels = [10, 20, 50, 100, 200, 500, 1000];
         const maxAttemptsList = [5, 5, 5, 10, 20, 50, 100];
@@ -247,6 +251,8 @@
         let maxAttempts = 5;
         let secretNumber = 0;
         let attempts = 1;
+
+        updateLeaderboard();
 
         function setNickname() {
             let input = document.getElementById('nickname-input').value.trim();
@@ -258,12 +264,14 @@
         }
 
         function startGame() {
+            document.getElementById('restart-area').classList.add('hidden');
             currentLevel = parseInt(document.getElementById('level-select').value);
             maxNum = levels[currentLevel];
             maxAttempts = maxAttemptsList[currentLevel];
             secretNumber = Math.floor(Math.random() * maxNum) + 1;
             attempts = 1;
 
+            document.getElementById('level-selection-area').classList.add('hidden');
             document.getElementById('play-area').classList.remove('hidden');
             document.getElementById('prompt-text').innerText = `Guess the number from 1 to ${maxNum} (Attempts left: ${maxAttempts - attempts + 1}):`;
             document.getElementById('log').innerHTML = `Game started on level ${currentLevel + 1}. Good luck!<br>`;
@@ -285,8 +293,8 @@
                     log.innerHTML += `Best score for now: ${bestScore} attempts.<br>`;
                 }
                 leaderboard.push({name: playerName, level: currentLevel + 1, attempts: attempts, status: "Won"});
-                updateLeaderboard();
-                document.getElementById('play-area').classList.add('hidden');
+                saveAndRefreshLeaderboard();
+                endRound();
             } else {
                 if (guessVal < secretNumber) {
                     log.innerHTML += `Too low! Try higher.<br>`;
@@ -295,16 +303,39 @@
                 }
                 attempts++;
                 if (attempts > maxAttempts) {
-                    log.innerHTML += `GAME OVER! YOU RAN OUT OF ATTEMPTS. The number was ${secretNumber}.<br>`;
+                    log.innerHTML += `GAME OVER! YOU RUN OUT OF ATTEMPTS. The number was ${secretNumber}.<br>`;
                     leaderboard.push({name: playerName, level: currentLevel + 1, attempts: attempts - 1, status: "Lost"});
-                    updateLeaderboard();
-                    document.getElementById('play-area').classList.add('hidden');
+                    saveAndRefreshLeaderboard();
+                    endRound();
                 } else {
                     document.getElementById('prompt-text').innerText = `Guess the number from 1 to ${maxNum} (Attempts left: ${maxAttempts - attempts + 1}):`;
                 }
             }
             document.getElementById('guess-input').value = '';
             log.scrollTop = log.scrollHeight;
+        }
+
+        function endRound() {
+            document.getElementById('play-area').classList.add('hidden');
+            document.getElementById('restart-area').classList.remove('hidden');
+        }
+
+        function restartGame(choice) {
+            document.getElementById('restart-area').classList.add('hidden');
+            if (choice) {
+                // Возвращаем выбор уровня (y)
+                document.getElementById('level-selection-area').classList.remove('hidden');
+            } else {
+                // Если нет (n), можно сбросить или показать финальное сообщение
+                document.getElementById('log.innerHTML') = '';
+                document.getElementById('level-selection-area').classList.remove('hidden');
+                alert("Thanks for playing! Returning to menu.");
+            }
+        }
+
+        function saveAndRefreshLeaderboard() {
+            localStorage.setItem('manga_leaderboard', JSON.stringify(leaderboard));
+            updateLeaderboard();
         }
 
         function updateLeaderboard() {
@@ -321,7 +352,12 @@
             });
         }
 
-        // Твой калькулятор
+        function clearLeaderboard() {
+            localStorage.removeItem('manga_leaderboard');
+            leaderboard = [];
+            updateLeaderboard();
+        }
+
         function runCalculator() {
             let num1 = parseFloat(document.getElementById('calc-num1').value);
             let op = document.getElementById('calc-op').value.trim();
@@ -334,22 +370,17 @@
             }
 
             let result;
-            if (op === "+") {
-                result = num1 + num2;
-                resBox.innerText = "Result: " + result;
-            } else if (op === "-") {
-                result = num1 - num2;
-                resBox.innerText = "Result: " + result;
-            } else if (op === "*") {
-                result = num1 * num2;
-                resBox.innerText = "Result: " + result;
-            } else if (op === "/") {
+            if (op === "+") { result = num1 + num2; }
+            else if (op === "-") { result = num1 - num2; }
+            else if (op === "*") { result = num1 * num2; }
+            else if (op === "/") {
                 if(num2 === 0) { resBox.innerText = "Error: Division by zero!"; return; }
                 result = num1 / num2;
-                resBox.innerText = "Result: " + result;
             } else {
                 resBox.innerText = "Error: false operator!";
+                return;
             }
+            resBox.innerText = "Result: " + result;
         }
     </script>
 </body>
